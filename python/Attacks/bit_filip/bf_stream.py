@@ -36,7 +36,9 @@ print(ord(new_value))  # ord return ASCII code
 # do not use XOR with bytes
 mask = plaintext[index] ^ ord(new_value)
 print(mask)  # 0011
-cipher_array = bytearray(ciphertext)  # becuase the byte is unmodifiable
+cipher_array = bytearray(
+    ciphertext
+)  # becuase the byte is unmodifiable and treat the byte like integer
 cipher_array[index] = cipher_array[index] ^ mask
 
 print(cipher_array[index])
