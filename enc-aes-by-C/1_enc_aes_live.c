@@ -3,6 +3,7 @@
 #include </usr/include/stdlib.h>
 #include <string.h>
 
+//define micro
 #define ENCRYPT 1
 #define DECRYPT 0
 
@@ -15,25 +16,26 @@ int main(int argc, char **argv)
 
 	int key_size, ilen, olen, tlen;
 
-	// taking input AS string
+	// purpose : taking input AS string
 	//encrypt with AES-128-CBC
-	//output: encry pted string
+	//output: encrypted string
 	//
 
 	// first create key and must pass to ssl as unsigned char and becuase
-	// it is 128 we need 16 byte
+	// it is 128 bits we need 16 bytes
 	//asci code correspond
 	//gcc -o enc.exe nameof the file -lcrypto
 	//./enc.exe
-	unsigned char *key = (unsigned char *)"0123456789012345";
-	// -K 012345 --> 01 0000 0001 0000 0010 ...
-	//3031 like 30 is asci code of 0 31 is asci of 1
+	unsigned char *key = (unsigned char *)"0123456789012345"; //for instance 0123.
+	//these are not character and are ASCII code 
+	// -K 012345 --> 01 0000 0001 0000 0010 ... -k encoded as byte 
+	//3031 like 30 is asci code of 0 31 is asci of 1 when you get final output
 	// iv
 	unsigned char *iv = (unsigned char *)"aaaaaaaaaaaaaaaa";
 	// 1010 1010 1010...
 	int i;
 	printf("key is: ");
-	for (i = 0; i < 16; i++)
+	for (i = 0; i < 16; i++) //print 16 bytes of characters
 		printf("%02x", key[i]);
 	printf("\n");
 
@@ -42,10 +44,11 @@ int main(int argc, char **argv)
 		printf("%02x", iv[i]);
 	printf("\n");
 
-	/* algorithm EVP_aes_128_cbc()  openssl enc*/ //all algorithms are stored in EVP library
+	/* algorithm EVP_aes_128_cbc()  openssl enc*/ //all algorithms are stored in EVP part of library
+												  //openssl enc -e -aes-128-cbc --> EVP_CIPHER
 												  //can see the name of algorithms
 												  //in evp we have mode cipher and loading the enc module
-	key_size = EVP_CIPHER_key_length(EVP_aes_128_cbc());
+	key_size = EVP_CIPHER_key_length(EVP_aes_128_cbc()); //for example can see the key size
 	printf("key size = %d\n", key_size);
 
 	/**
@@ -54,21 +57,22 @@ int main(int argc, char **argv)
 	//first we have to create the context to build environment to encryption
 	//https://www.openssl.org/docs/man1.1.0/man3/EVP_CipherInit_ex.html
 	// creating the object --> which is in C named context
-	EVP_CIPHER_CTX *ctx; //allocate the variable and object is type of EVP....
+	EVP_CIPHER_CTX *ctx; //allocate the variable(space) and object is type of EVP....
 	//is data structure to store all type of attribure inside the class
-	//after allocate the context
+	//after allocate the context and it is pointer to the objects
 	/*
 EVP_CIPHER_CTX *EVP_CIPHER_CTX_new(void);
 */
 	ctx = EVP_CIPHER_CTX_new(); //this is pointer to context that created.masinly contrsrutture
-	//allocate the space to recive the data (create the empty obj)
+	//allocate the space to receive the data (create the empty obj)
+	//simulate oob in pure C
 
 	/*
 void EVP_CIPHER_CTX_init(EVP_CIPHER_CTX *a);
 */
 	EVP_CIPHER_CTX_init(ctx); //new constructure method...initialise the variables
 	// an object ready to do something with symmetric crypto
-
+	//pass the obj to it 
 	/*
 int EVP_CipherInit_ex(EVP_CIPHER_CTX *ctx, const EVP_CIPHER *type,
          ENGINE *impl, const unsigned char *key, const unsigned char *iv, int enc);
@@ -83,7 +87,7 @@ int EVP_CipherInit_ex(EVP_CIPHER_CTX *ctx, const EVP_CIPHER *type,
 	EVP_CipherInit_ex(ctx, EVP_aes_128_cbc(), NULL, key, iv, ENCRYPT);
 
 	/* message: 16 bytes = 1 block */
-	unsigned char *message = (unsigned char *)"this is amessage";
+	unsigned char *message = (unsigned char *)"this is amessage";//msg is 16 bytes so single blcok
 	printf("message is: ");
 	for (i = 0; i < strlen(message); i++)
 		printf("%02x", message[i]);
@@ -99,7 +103,11 @@ int EVP_CipherUpdate(EVP_CIPHER_CTX *ctx, unsigned char *out,
  int EVP_CipherFinal_ex(EVP_CIPHER_CTX *ctx, unsigned char *outm,
          int *outl);
 */
-
+	//passing the data
+	//obuf addresst of buffer to save the result
+	//&olen is number of bytes that produced in output and save inside the variable and this is reference
+	//take message as input and save in obuf as output and provide the the number
+	//bytes that you save in buffer  
 	int tot = 0;
 	// char obuf[2048];
 	EVP_CipherUpdate(ctx, obuf, &olen, message, strlen(message));
@@ -108,7 +116,7 @@ int EVP_CipherUpdate(EVP_CIPHER_CTX *ctx, unsigned char *out,
 	// obuf [ 1111111111111111 1010101010101 ]
 	// tot == 16 byte of padding
 	EVP_CipherFinal_ex(ctx, obuf + tot, &olen); //saving and adding the padding right after the buffer
-
+	//write the olen after tot characters in buffer
 	tot += olen;
 
 	printf("tot = %d\n", tot);
@@ -132,7 +140,7 @@ int EVP_CipherUpdate(EVP_CIPHER_CTX *ctx, unsigned char *out,
 
 	int tot_dec = 0;
 	unsigned char decrypted[BUF_SIZE];
-
+//tot is 32 bytes
 	EVP_CipherUpdate(ctx, decrypted, &olen, obuf, tot);
 	printf("olen = %d\n", olen);
 	tot_dec += olen;
