@@ -29,6 +29,13 @@ int main(int argc, char **argv) {
 	int key_size,ilen,olen,tlen;
 
 
+	/* Load the human readable error strings for libcrypto */
+  ERR_load_crypto_strings();
+  /* Load all digest and cipher algorithms */
+  OpenSSL_add_all_algorithms();
+
+
+
 	unsigned char *key = (unsigned char *)"0123456789012345";
 	unsigned char *iv  = (unsigned char *)"aabbccddeeffaabb";
 
@@ -50,36 +57,37 @@ int main(int argc, char **argv) {
 
 
 	//https://www.openssl.org/docs/man1.1.0/man3/EVP_CipherInit_ex.html
-
+//generate the context
 	ctx = EVP_CIPHER_CTX_new();
-	EVP_CIPHER_CTX_init(ctx);
-
+	if(EVP_CIPHER_CTX_init(ctx)==NULL)
+		handleErrors();
+//create the empty context
 
 	/*
 	returns 1 if everything is OK
 	*/
 	if(1 != EVP_CipherInit_ex(ctx, EVP_aes_128_cbc(), NULL, key, iv, ENCRYPT))
-	handleErrors();
+		handleErrors();
 
 
 
 	unsigned char *message = (unsigned char *)"this is amessage";
 	printf("message is: ");
 	for(i = 0; i < strlen(message); i++)
-	printf("%02x", message[i]);
+		printf("%02x", message[i]);
 	printf("\n");
 
 
 	int tot = 0;
 	if(1 != EVP_CipherUpdate(ctx,obuf,&olen,message,strlen(message)))
-	handleErrors();
+		handleErrors();
 
 	printf("olen = %d\n",olen);
 	tot += olen;
 
 
 	if(!EVP_CipherFinal_ex(ctx,obuf+tot,&tlen))
-	handleErrors();
+		handleErrors();
 
 	tot += tlen;
 	printf("tot = %d\n",tot);
@@ -87,11 +95,19 @@ int main(int argc, char **argv) {
 
 	printf("output is: ");
 	for(i = 0; i < tot; i++)
-	printf("%02x", obuf[i]);
+		printf("%02x", obuf[i]);
 	printf("\n");
 
-
+//make context free
 	EVP_CIPHER_CTX_free(ctx);
+//don't write the EVP_cleanup() if you are using the free(x) option
+
+	// complete free all the cipher data
+	CRYPTO_cleanup_all_ex_data();
+
+  /* Remove error strings */
+  ERR_free_strings();
+
 
 	return 0;
 }
